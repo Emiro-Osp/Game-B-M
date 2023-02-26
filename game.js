@@ -7,11 +7,19 @@ const btnDown = document.querySelector('#down');
 
 let canvasSize;
 let elementsSize;
+let level = 0;
 
 const playerPosition = {
     x: undefined,
     y: undefined,
 };
+
+const giftPosition = {
+  x: undefined,
+  y: undefined,
+};
+
+let enemiesPosition = []; 
 
 window.addEventListener('load', setCanvasSize);
 window.addEventListener('resize', setCanvasSize);
@@ -35,11 +43,18 @@ function startGame (){
 game.font = elementsSize + 'px Verdana';
 game.textAlign = 'end';
 
-const map = maps[0];
+const map = maps[level];
+
+if (!map){
+  gameWim();
+  return;
+}
+
 const mapRows = map.trim().split('\n');
 const mapRowsCol = mapRows.map(row => row.trim().split(''));
 console.log({map, mapRows, mapRowsCol});
 
+enemiesPosition = [];
 game.clearRect(0,0,canvasSize, canvasSize);
 
 mapRowsCol.forEach((row, rowI )=> {
@@ -52,10 +67,17 @@ mapRowsCol.forEach((row, rowI )=> {
            if (!playerPosition.x && !playerPosition.y) {
             playerPosition.x = posX;
             playerPosition.y = posY;
-            console.log({playerPosition})
-           }
-        }
-
+            console.log({playerPosition});
+           } 
+          } else if (col == 'I') {
+            giftPosition.x = posX;
+            giftPosition.y = posY;
+          } else if (col == 'X') {
+            enemiesPosition.push({
+              x: posX,
+              y: posY,
+            });
+          }
         game.fillText(emoji, posX, posY);
     });
 
@@ -64,9 +86,37 @@ movePlayer();
 }
 
 function movePlayer () {
-    
+
+const giftCollisionX = playerPosition.x.toFixed(12) == giftPosition.x.toFixed(12);    
+const giftCollisionY = playerPosition.y.toFixed(12) == giftPosition.y.toFixed(12);
+const giftCollision = giftCollisionX && giftCollisionY;
+
+if (giftCollision) {
+  levelWim();
+}
+
+const enemiesCollision = enemiesPosition.find(enemy => {
+  const enemiesCollisionX = enemy.x.toFixed(12) == playerPosition.x.toFixed(12);
+  const enemiesCollisionY = enemy.y.toFixed(12) == playerPosition.y.toFixed(12);
+  return enemiesCollisionX && enemiesCollisionY;
+});
+
+if (enemiesCollision) {
+  console.log('Chocaste con un enemigo')
+}
+
 game.fillText(emojis['PLAYER'], playerPosition.x, playerPosition.y)
 
+}
+
+function levelWim ( ) {
+  console.log('subiste')
+  level++;
+  startGame();
+}
+
+function gameWim (){
+  console.log('WIM')
 }
 
 window.addEventListener('keydown', moveByKeys);
