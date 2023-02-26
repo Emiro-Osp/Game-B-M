@@ -4,10 +4,19 @@ const btnUp = document.querySelector('#up');
 const btnLeft = document.querySelector('#left');
 const btnRight = document.querySelector('#right');
 const btnDown = document.querySelector('#down');
+const spanLives = document.querySelector('#lives');
+const spanTime= document.querySelector('#time');
+const spanRecord = document.querySelector('#record');
+const pResult= document.querySelector('#result');
 
 let canvasSize;
 let elementsSize;
 let level = 0;
+let lives = 3;
+
+let timeStart;
+let playerTime;
+let timeInterval;
 
 const playerPosition = {
     x: undefined,
@@ -24,6 +33,10 @@ let enemiesPosition = [];
 window.addEventListener('load', setCanvasSize);
 window.addEventListener('resize', setCanvasSize);
 
+function fixNumber (n) {
+  return Number(n.toFixed(0))
+}
+
 function setCanvasSize() {
     if (window.innerHeight > window.innerWidth) {
       canvasSize = window.innerWidth * 0.8;
@@ -31,10 +44,15 @@ function setCanvasSize() {
       canvasSize = window.innerHeight * 0.6;
     }
 
+canvasSize = Number(canvasSize.toFixed(0));
+
 canvas.setAttribute('width', canvasSize);
 canvas.setAttribute('height', canvasSize);
 
 elementsSize = canvasSize / 10; 
+
+playerPosition.x = undefined;
+playerPosition.y = undefined;
 
 startGame();
 }
@@ -50,12 +68,21 @@ if (!map){
   return;
 }
 
+if (!timeStart) {
+  timeStart = Date.now();
+  timeInterval = setInterval(showTime, 100);
+  showRecord();
+}
+
 const mapRows = map.trim().split('\n');
 const mapRowsCol = mapRows.map(row => row.trim().split(''));
 console.log({map, mapRows, mapRowsCol});
 
+showLives();
+
 enemiesPosition = [];
 game.clearRect(0,0,canvasSize, canvasSize);
+
 
 mapRowsCol.forEach((row, rowI )=> {
     row.forEach((col, colI) => {
@@ -87,8 +114,8 @@ movePlayer();
 
 function movePlayer () {
 
-const giftCollisionX = playerPosition.x.toFixed(12) == giftPosition.x.toFixed(12);    
-const giftCollisionY = playerPosition.y.toFixed(12) == giftPosition.y.toFixed(12);
+const giftCollisionX = playerPosition.x.toFixed(10) == giftPosition.x.toFixed(10);    
+const giftCollisionY = playerPosition.y.toFixed(10) == giftPosition.y.toFixed(10);
 const giftCollision = giftCollisionX && giftCollisionY;
 
 if (giftCollision) {
@@ -96,13 +123,13 @@ if (giftCollision) {
 }
 
 const enemiesCollision = enemiesPosition.find(enemy => {
-  const enemiesCollisionX = enemy.x.toFixed(12) == playerPosition.x.toFixed(12);
-  const enemiesCollisionY = enemy.y.toFixed(12) == playerPosition.y.toFixed(12);
+  const enemiesCollisionX = enemy.x.toFixed(10) == playerPosition.x.toFixed(10);
+  const enemiesCollisionY = enemy.y.toFixed(10) == playerPosition.y.toFixed(10);
   return enemiesCollisionX && enemiesCollisionY;
 });
 
 if (enemiesCollision) {
-  console.log('Chocaste con un enemigo')
+  levelFail();
 }
 
 game.fillText(emojis['PLAYER'], playerPosition.x, playerPosition.y)
@@ -115,8 +142,61 @@ function levelWim ( ) {
   startGame();
 }
 
+function levelFail () {
+  console.log('Chocaste');
+  lives--;
+
+  if (lives <= 0) { 
+    level = 0;
+    lives = 3;
+    timeStart = undefined;
+  } 
+  
+  playerPosition.x = undefined;
+  playerPosition.y = undefined;
+  startGame(); 
+  }
+
+
 function gameWim (){
   console.log('WIM')
+  clearInterval(timeInterval);
+
+  const recordTime = localStorage.getItem('record_time');
+  const playerTime = Date.now() - timeStart;
+  
+  if (recordTime){
+    if (recordTime >= playerTime){
+      localStorage.setItem('record_time', playerTime);
+      pResult.innerHTML = ('Superaste el record')
+    } else {
+      pResult.innerHTML = ('No superaste el record');
+    }
+
+  } else  {
+    localStorage.setItem('record_time', playerTime);
+    pResult.innerHTML = ('Primera vez?, muy bien, ahora supera tu record')
+  }
+
+
+
+  console.log({recordTime, playerTime});
+}
+
+function showLives () {
+
+const heartsArray = Array(lives).fill(emojis['HEART']);
+spanLives.innerHTML = '';
+heartsArray.forEach(heart => spanLives.append(heart));
+
+}
+
+function showTime (){
+  spanTime.innerHTML = Date.now() - timeStart;
+}
+
+function showRecord (){
+  spanRecord.innerHTML = localStorage.getItem('record_time');
 }
 
 window.addEventListener('keydown', moveByKeys);
